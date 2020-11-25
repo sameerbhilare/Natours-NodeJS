@@ -1,0 +1,24 @@
+//- Here we only want to put the content for this specific page.
+//- So we want no footer here and no header and none of the stuff that we have in the base.
+
+//- Extending - whenever the overview template is rendered, we then take the base template 
+//- and fill it up with the content of this file, and so we extend it.
+
+//- each file can extend only one file. But one file can have many blocks.
+
+//- this file extends base.pug file
+extends base
+
+block content
+    main.main
+        .login-form
+            h2.heading-secondary.ma-bt-lg Log into your account
+            form.form.form--login
+                .form__group
+                    label.form__label(for='email') Email address
+                    input#email.form__input(type='email', placeholder='you@example.com', required)
+                .form__group.ma-bt-md
+                    label.form__label(for='password') Password
+                    input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
+                .form__group
+                    button.btn.btn--green Login
