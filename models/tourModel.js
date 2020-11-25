@@ -294,12 +294,13 @@ tourSchema.pre(/^find/, function (next) {
 // QUERY MIDDLEWARE - POST hook for methods starting with 'find' keyword
 // POST 'find' hook - runs for document method names starting with 'find'
 // runs after the query has executed
+/*
 tourSchema.post(/^find/, function (docs, next) {
   console.log(`Query took ${Date.now() - this.start} ms.`);
   // 'docs' refers to all the documents that we returned from the query.
   //console.log(docs);
   next();
-});
+}); */
 
 // AGGREGATION MIDDLEWARE
 // to exclude the secret tour in the aggregation.

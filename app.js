@@ -8,6 +8,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -131,6 +132,9 @@ app.use(
     ],
   })
 ); // hpp() returns a middleware function
+
+// compress all our responses no matter if that's JSON or HTML code.
+app.use(compression()); //  return a middleware function which is then again going to compress all the text that is sent to clients.
 
 /*************************************************** */
 app.use((req, res, next) => {

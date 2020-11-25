@@ -90,7 +90,7 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
     },
   ]);
 
-  console.log(stats);
+  //console.log(stats);
 
   // 2) save statistics to the corresponding tour
   // It is very handy yo have these properties (ratingsQuantity, ratingsAverage) directly on the tour.

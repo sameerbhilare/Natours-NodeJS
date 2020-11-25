@@ -10,6 +10,7 @@ import { showAlert } from './alerts';
 export const updateSettings = async (data, type) => {
   // for /updateMyPassword, API expects passwordCurrent, password, passwordConfirm
   // for /updateMe, API expects name, email
+  // relative API path because website and API are hosting on the same place
   const url = type === 'password' ? '/api/v1/users/updateMyPassword' : '/api/v1/users/updateMe';
   try {
     const res = await axios({

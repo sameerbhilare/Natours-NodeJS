@@ -49,7 +49,7 @@ exports.uploadTourImages = upload.fields([
 
 // if we have multiple files, those are available at req.files
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
-  console.log(req.files);
+  // console.log(req.files);
 
   // if no images, then go to next middleware
   if (!req.files || !req.files.imageCover || !req.files.images) return next();
