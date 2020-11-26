@@ -18,6 +18,7 @@ const bookingRouter = require('./routes/bookingRoutes');
 const viewRouter = require('./routes/viewRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const bookingController = require('./controllers/bookingController');
 
 // express is a function which upon calling will add a bunch of methods to our app variable.
 const app = express();
@@ -102,6 +103,27 @@ const limiter = rateLimit({
 // using limiter middleware for all requests to '/api'
 // this will affect all routes under this URI ('/api')
 app.use('/api', limiter);
+
+// route for stripe webhook
+/*
+  Why do we actually define this /webhook-checkout here in app.js 
+  instead of doing it for example in the bookingRouter.
+  The reason for that is that in this handler function (bookingController.webhookCheckout), 
+  when we receive the body from Stripe, the Stripe function that we're then going to use
+  to read the body needs this body in a raw form, so basically as a stream and not as JSON,
+  otherwise this is not going to be working at all.
+
+  Now the thing is, that as soon as a request hits the Body Parser middleware below (express.json), 
+  the body will be parsed and converted to JSON. It will then be put on request.body as a simple JSON object.
+  However this route handler (bookingController.webhookCheckout) would then not work.
+  That's the whole reason why we need to put this route here before we call the body-parser.
+  Now we still need to actually parse the body but in a so-called raw format, using express.raw({ type: 'application/json' })
+*/
+app.use(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }), // added this raw body parser in this middleware stack.
+  bookingController.webhookCheckout
+);
 
 /*************************************************** */
 // creating custom middleware and adding it to middleware stack

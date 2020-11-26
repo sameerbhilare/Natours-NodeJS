@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Tour = require('../models/tourModel');
+const User = require('../models/userModel');
 const Booking = require('../models/bookingModel');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
@@ -17,6 +18,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
     /* 1) INFO ABOUT SESSION */
     payment_method_types: ['card'], // 'card' for credit card
 
+    /************************************************************************************************* */
     // url to redirect to as soon as credit card has been successfully charged
     /* 
       basically we want to create a new booking in our DB whenever this url here is accessed.
@@ -34,11 +36,27 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
       could simply call it without going through the checkout process. 
       And so anyone really could just book a tour without having to pay. :(
     */
-    success_url: `${req.protocol}://${req.get('host')}/?tour=${req.params.tourId}&user=${
+    /*success_url: `${req.protocol}://${req.get('host')}/my-tours/?tour=${req.params.tourId}&user=${
       req.user.id
-    }&price=${tour.price}`,
+    }&price=${tour.price}`,*/
+    /************************************************************************************************* */
+    // url to redirect to as soon as credit card has been successfully charged
+    /*
+      After a successful booking, we still want to come back to my-tours 
+      but without all above query parameters (tour, user, price).
+      That's because we no longer need the createBookingCheckout function, 
+      but this will be eligently handled by the stripe webhook function createBookingCheckout below
+      as createBookingCheckout gets called when Stripe calls our webhook route (/webhook-checkout)
+    */
+    success_url: `${req.protocol}://${req.get('host')}/my-tours`,
+
     cancel_url: `${req.protocol}://${req.get('host')}/tour/${tour.slug}`, // if user chose to cancel current payment
-    customer_email: req.user.email, // so that user doesn't need to manually fill out the email
+
+    // so that user doesn't need to manually fill out the email
+    // that's important because later once the purchase was successful,
+    // we will then get access to the session object again.
+    // And by then, we want to create a new bookingin our database.
+    customer_email: req.user.email,
 
     // this field allows us to pass in some data about the session that we are currently creating.
     // that's important because later once the purchase was successful,
@@ -73,6 +91,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
 // function which will create booking in the DB
 // name: createBookingBheckout because later on we will also have create booking, which will then be accessible from our bookings API.
 // This middleware need to be added in '/' route bcz that's what our success url is right now
+/*
 exports.createBookingCheckout = catchAsync(async (req, res, next) => {
   // this is only TEMPORARY because it's UNSECURE. Everyone can make bookings without paying.
   const { tour, user, price } = req.query;
@@ -85,7 +104,51 @@ exports.createBookingCheckout = catchAsync(async (req, res, next) => {
 
   // redirect to homepage by stripping the tour, user and price query params
   res.redirect(req.originalUrl.split('?')[0]);
-});
+}); */
+
+// normal function to create booking when stripe webhook is called for Payment Success event
+const createBooking = async (session) => {
+  const tour = session.client_reference_id; // stored in getCheckoutSession above while starting the session
+  const user = (await User.findOne({ email: session.customer_email })).id; // stored in getCheckoutSession above while starting the session
+  const price = session.line_items[0].amount / 100; // this is how we have stored above in getCheckoutSession
+
+  await Booking.create({ tour, user, price });
+};
+
+// ROUTE HANLDERS for Stripe webhook for Succssful Payment event.
+exports.webhookCheckout = (req, res, next) => {
+  //  1) first thing that we need to do is to read this Stripe signature out of our headers.
+  // Basically when Stripe calls our webhook, it will add a header to that request
+  // containing a special signature for our webhook in the 'stripe-signature' header.
+  const signature = req.headers['stripe-signature'];
+
+  // 2) create stripe event using RAW body as stream.
+  // We need all of bwlo data like the signature and the secret
+  // in order to validate the data that comes in the body so that no one can actually manipulate that.
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body, // RAW body as stream
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (error) {
+    // In case there is an error, we want to send back an error to Stripe.
+    // It is Stripe who will receive this response
+    // because it is Stripe who will actually call this webhook URL which will then call this webhook function.
+    return res.status(400).send(`Webhook error: ${error.message}`);
+  }
+
+  // 3) Since our webhook is tied to the successful payment event, which is 'checkout.session.completed'
+  // So if this is that event, we then want to actually use the event to create our booking in our database.
+  if (event.type === 'checkout.session.completed') {
+    // the event will contain the Session Data which we will use to create booking in our DB
+    createBooking(event.data.object);
+  }
+
+  // 4) Send response back to Stripe
+  res.status(200).json({ received: true });
+};
 
 // ROUTE HANLDERS for CRUD operations on Booking
 exports.getAllBookings = factory.getAll(Booking);

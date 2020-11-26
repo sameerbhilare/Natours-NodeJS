@@ -10,7 +10,7 @@ const router = express.Router();
 // because here for views, we will always be using GET
 router.get(
   '/',
-  bookingController.createBookingCheckout, // temporary until we have our websites deployed to a server
+  //bookingController.createBookingCheckout, // temporary until we have our websites deployed to a server
   authController.isLoggedIn,
   viewsController.getOverview
 );
