@@ -25,6 +25,13 @@ const globalErrorHandler = require('./controllers/errorController');
 const app = express();
 
 /*
+  request.secure doesn't work in the first place because Heroku acts as a proxy, 
+  which kind of redirects and modifies incoming requests.
+  So we need to trust the proxies. For this, express has built in support for this kind of situations.
+*/
+app.enable('trust proxy');
+
+/*
   Express automatically supports the most common engines out of the box, and pug is one of them. 
   So we actually don't even need to install pug, and we also don't need to require it anywhere. 
   All of this happens behind the scenes internally in Express.

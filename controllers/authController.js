@@ -22,7 +22,7 @@ const signToken = (id) => {
 };
 
 // util function for create and send JWT token
-const createSendJWT = (user, statusCode, res) => {
+const createSendJWT = (user, statusCode, req, res) => {
   // 1) CREATE the JWT TOKEN
   const token = signToken(user._id);
 
@@ -30,10 +30,17 @@ const createSendJWT = (user, statusCode, res) => {
   // Sending a cookie is basically attaching it to the response object.
   const cookieOptions = {
     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000), // coverting 90 days to ms
-    secure: true, // the cookie will only be sent on an encrypted connection, basically HTTPS
     httpOnly: true, // so that the browser can only receive and send the cookie but cannot access or modify it in any way.
+    // the cookie will only be sent on an encrypted connection, basically HTTPS
+    /*
+      When we're in production, we said that this cookie can only be sent on a secure connection. 
+      So, basically, on an https connection. 
+      Being in production doesn't mean we are in https, so we should check for the req.secure property.
+      In express, req.secure is set to true when the connection is https.
+      For heroku specific, we need to check if 'x-forwarded-proto' header is set to 'https'
+    */
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https', // because in dev we use http not https
   };
-  if (process.env.NODE_ENV === 'development') cookieOptions.secure = false; // because in dev we use http not https
 
   res.cookie('jwt', token, cookieOptions);
 
@@ -97,7 +104,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 3) If everything is ok, generate and send the JWT to client
   // This token will be passed by the user in subsequent requests.
-  createSendJWT(user, 200, res);
+  createSendJWT(user, 200, req, res);
 });
 
 /*
@@ -323,7 +330,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   // 3) update the changedPasswordAt property for the current user.
   // 4) log the user in, send JWT
-  createSendJWT(user, 200, res);
+  createSendJWT(user, 200, req, res);
 });
 
 // To allow currently logged in user to change the password. (Not forget password)
@@ -349,5 +356,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   // it's really important to keep in mind not to use update for anything related to passwords.
 
   // 4) log the user in, send jwt
-  createSendJWT(user, 200, res);
+  createSendJWT(user, 200, req, res);
 });
