@@ -114,9 +114,9 @@ const createBooking = async (session) => {
   // check API reference to find out exactly where it is saved in final session
   // or you can see the session obejct at login to stripe ->
   //    Developers-> Web hooks -> open relevant endpoint for this event -> Webhook attempts
-  const tour = session.data.object.client_reference_id; // stored in getCheckoutSession above while starting the session
-  const user = (await User.findOne({ email: session.data.object.customer_email })).id; // stored in getCheckoutSession above while starting the session
-  const price = session.data.object.amount_total / 100; // this is how we have stored above in getCheckoutSession
+  const tour = session.client_reference_id; // stored in getCheckoutSession above while starting the session
+  const user = (await User.findOne({ email: session.customer_email })).id; // stored in getCheckoutSession above while starting the session
+  const price = session.amount_total / 100; // this is how we have stored above in getCheckoutSession
 
   await Booking.create({ tour, user, price });
 };
@@ -149,6 +149,7 @@ exports.webhookCheckout = (req, res, next) => {
   // So if this is that event, we then want to actually use the event to create our booking in our database.
   if (event.type === 'checkout.session.completed') {
     // the event will contain the Session Data which we will use to create booking in our DB
+    console.log('Payment Success ----------->', event.data.object);
     createBooking(event.data.object);
   }
 
