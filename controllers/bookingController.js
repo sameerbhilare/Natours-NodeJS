@@ -73,7 +73,8 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
         // these images need to be live images (images hosted on internet)
         // because Stripe will actually upload this image to their own server.
         // this is another of the things that we can only really do once the website is deployed.
-        images: [`https://www.natours.dev/img/tours/${tour.imageCover}`],
+        // Using 'prepared' URL as our website is live at https://natours-sameerb.herokuapp.com
+        images: [`${req.protocol}://${req.get('host')}/img/tours/${tour.imageCover}`],
         amount: tour.price * 100, // price of the product in 'cents'
         currency: 'usd', // 'eur', etc.
         quantity: 1, // quantity of the product being purchased
@@ -108,9 +109,14 @@ exports.createBookingCheckout = catchAsync(async (req, res, next) => {
 
 // normal function to create booking when stripe webhook is called for Payment Success event
 const createBooking = async (session) => {
-  const tour = session.client_reference_id; // stored in getCheckoutSession above while starting the session
-  const user = (await User.findOne({ email: session.customer_email })).id; // stored in getCheckoutSession above while starting the session
-  const price = session.line_items[0].amount / 100; // this is how we have stored above in getCheckoutSession
+  // client_reference_id, customer_email and price is what we had passed while starting the session
+  // so this informatio is available in the final session data object.
+  // check API reference to find out exactly where it is saved in final session
+  // or you can see the session obejct at login to stripe ->
+  //    Developers-> Web hooks -> open relevant endpoint for this event -> Webhook attempts
+  const tour = session.data.client_reference_id; // stored in getCheckoutSession above while starting the session
+  const user = (await User.findOne({ email: session.data.customer_email })).id; // stored in getCheckoutSession above while starting the session
+  const price = session.data.amount_total / 100; // this is how we have stored above in getCheckoutSession
 
   await Booking.create({ tour, user, price });
 };
