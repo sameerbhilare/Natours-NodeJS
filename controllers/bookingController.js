@@ -48,7 +48,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
       but this will be eligently handled by the stripe webhook function createBookingCheckout below
       as createBookingCheckout gets called when Stripe calls our webhook route (/webhook-checkout)
     */
-    success_url: `${req.protocol}://${req.get('host')}/my-tours`,
+    success_url: `${req.protocol}://${req.get('host')}/my-tours?alert=booking`,
 
     cancel_url: `${req.protocol}://${req.get('host')}/tour/${tour.slug}`, // if user chose to cancel current payment
 
@@ -149,7 +149,6 @@ exports.webhookCheckout = (req, res, next) => {
   // So if this is that event, we then want to actually use the event to create our booking in our database.
   if (event.type === 'checkout.session.completed') {
     // the event will contain the Session Data which we will use to create booking in our DB
-    console.log('Payment Success ----------->', event.data.object);
     createBooking(event.data.object);
   }
 

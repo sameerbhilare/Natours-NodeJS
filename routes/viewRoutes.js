@@ -5,6 +5,13 @@ const bookingController = require('../controllers/bookingController');
 
 const router = express.Router();
 
+/*
+  This middleware will run for all views routes and will take 'alert' value (keyword) from the URL and, 
+  according to the keyword that we put there, will then put a whole alert message on response.locals.
+  This is reusable solution, currently used for stripe success url /my-tour/?alert=booking
+*/
+router.use(viewsController.alerts);
+
 // ROUTES
 // no need to use router.route('/').get(viewsController.getOverview)
 // because here for views, we will always be using GET

@@ -4,6 +4,27 @@ const Booking = require('../models/bookingModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+exports.alerts = (req, res, next) => {
+  const { alert } = req.query;
+
+  if (alert === 'booking') {
+    // 'booking' is passed from stripe success url in bookingController
+    /*
+      Stripe does very specifically say in their documentation that 
+      sometimes the webhook is called a little bit after the success URL is called.
+      In that case, that success URL would then show all of the current tours, but only after that,
+      the webhook would be called and the tour would be created in our database. 
+      Therefore, the new booking would not show up right away on the My Bookings page.
+      But of course, everything still worked well in that case. 
+      And so, I simply reload, but later we'll fix that problem.
+    */
+    res.locals.alert =
+      "Your booking was successful! Please check your email for confirmation. If your booking doesn't show up immediately, pelase come back later.";
+
+    next();
+  }
+};
+
 exports.getOverview = catchAsync(async (req, res, next) => {
   // 1) Get all tours data from our collection
   const tours = await Tour.find();

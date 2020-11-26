@@ -11,6 +11,7 @@ import { displayMap } from './mapbox';
 import { login, logout } from './login';
 import { updateSettings } from './updateSettings';
 import { bookTour } from './stripe';
+import { showAlert } from './alerts';
 
 // this is because we have stored data in 'data-locations' attribute of a div with id as 'map'
 // DOM elements
@@ -87,3 +88,7 @@ if (bookBtn) {
     bookTour(tourId);
   });
 }
+
+// show alert on succesful payment
+const alertMessage = document.querySelector('body').dataset.alert;
+if (alertMessage) showAlert('success', alertMessage, 20); // show alert for 20 seconds
