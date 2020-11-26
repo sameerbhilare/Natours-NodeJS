@@ -114,9 +114,9 @@ const createBooking = async (session) => {
   // check API reference to find out exactly where it is saved in final session
   // or you can see the session obejct at login to stripe ->
   //    Developers-> Web hooks -> open relevant endpoint for this event -> Webhook attempts
-  const tour = session.data.client_reference_id; // stored in getCheckoutSession above while starting the session
-  const user = (await User.findOne({ email: session.data.customer_email })).id; // stored in getCheckoutSession above while starting the session
-  const price = session.data.amount_total / 100; // this is how we have stored above in getCheckoutSession
+  const tour = session.data.object.client_reference_id; // stored in getCheckoutSession above while starting the session
+  const user = (await User.findOne({ email: session.data.object.customer_email })).id; // stored in getCheckoutSession above while starting the session
+  const price = session.data.object.amount_total / 100; // this is how we have stored above in getCheckoutSession
 
   await Booking.create({ tour, user, price });
 };
