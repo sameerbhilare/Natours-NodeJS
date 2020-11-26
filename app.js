@@ -9,6 +9,7 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
+const cors = require('cors');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -18,9 +19,6 @@ const viewRouter = require('./routes/viewRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
-/****************************************************
- * GLOBAL MIDDLEWARES
- */
 // express is a function which upon calling will add a bunch of methods to our app variable.
 const app = express();
 
@@ -40,6 +38,31 @@ app.set('view engine', 'pug');
 
 // to define which folder our views are located
 app.set('views', path.join(__dirname, 'views'));
+
+/****************************************************
+ * GLOBAL MIDDLEWARES
+ */
+// 1) implement cors
+// cors() returns a middleware function which will add a couple of different headers to our response.
+// We could add these headers manualy by ourselves without using this package but why reinvent?
+// this works for simple requests only - GET, POST
+app.use(cors());
+
+// to allow from specific origins only, if we have front-end and API on different domains or subdomains
+// this works for simple requests only - GET, POST
+/*
+app.use(
+  cors({
+    origin: 'https://natours-sameerb.herokuapp.com',
+  })
+); */
+
+// 2) implement cors for non-simple requests
+// handling for non-simple requests like delete, patch, etc.
+// here we need to handle OPTIONS http method just like app.get() for GET method
+// we need to define the route for which we want to handle the OPTIONS requests.
+app.options('*', cors());
+//app.options('/api/v1/tours/:id', cors()); // for specific routes
 
 /*************************************************** */
 // static files middleware
